@@ -1,6 +1,8 @@
 ﻿using System;
 
 using static funkcje.MetodaThomasa;
+using static funkcje.Entalpia;
+using static funkcje.FunkcjaG;
 
 namespace ConsoleApp1
 {
@@ -8,20 +10,22 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            double cS= 1000, cL= 1290, roS= 2679, roL= 2380, L= 390000, tempKrzep= 930, u0= 1213, uI= 298, lambdaL=104,lambdaS= 240;
+            //double cS= 1000, cL= 1290, roS= 2679, roL= 2380, L= 390000, tempKrzep= 930, u0= 1213, uI= 298, lambdaL=104,lambdaS= 240;
             //double cS = 690, cL = 800, roS = 7500, roL = 7000, L = 270000, tempKrzep = 1773, u0 = 2213, uI = 323, lambdaL = 33, lambdaS = 30;
-            //double cS = 10, cL = 10, roS = 25, roL = 25, L = 10, tempKrzep = 1, u0,uI, /*u0 = 1573, uI =973,*/ lambdaL = 250, lambdaS = 250;
-            int lbIteracji = 1000;
+            double cS = 1, cL = 6, roS = 2, roL = 2, tempKrzep = 20, u0,uI, /*u0 = 1573, uI =973,*/ lambdaL = 2, lambdaS = 1;
+            //double cS = 4217, cL = 4182, roS = 999.82, roL = 998.29, L = 334000, tempKrzep = 273, u0=293, uI=263, /*u0 = 1573, uI =973,*/ lambdaL = 0.6, lambdaS = 0.569;
+            int lbIteracji = 5;
             double a,stalaA,stalaSigma;
+            double aL =lambdaL/(roL*cL);
             //double entalpiaL = 3536280000, entalpiaS = 2491470000;
             //double entalpiaL = 11200275000, entalpiaS = 9175275000;
             //double entalpiaL = 500, entalpiaS = 250;
-            double entalpiaS = cS*roS*tempKrzep, entalpiaL = entalpiaS+L*roS;
-            double b = 2,tGwiazdka=100;
+            double entalpiaS , entalpiaL;
+            double b = 2.5, ax=0.5;
             double alfa=0.5;
             int granica = 0;
-            int n = 100;
-            double deltaX = b /n, deltaT = 1;
+            int n = 1000;
+            double deltaX = (b-ax) /n, deltaT = 0.1;
 
 
             //double[] temp0= { 50,50,50,50,50}; 
@@ -34,8 +38,17 @@ namespace ConsoleApp1
             for (int i=0;i<=n;i++)
             {
                 //temp0[i] = tempKrzep-i*dT;
-                temp0[i] = uI;
+                //temp0[i] = uI;
                 //temp0[i] =Math.Exp(-deltaX*i); /*warunek początkowy T0 */
+                //temp0[i] =Math.Exp(-deltaX*i);
+                if(0.5+i*deltaX<1)
+                {
+                    temp0[i] = 25 - 6 * (0.5 + i * deltaX) + Math.Pow(0.5 + i * deltaX, 2);
+                }
+                else
+                {
+                    temp0[i] = 35 -23*(0.5+i*deltaX)+ 9*Math.Pow(0.5 + i * deltaX, 2)- Math.Pow(0.5 + i * deltaX, 3);
+                }
             }
             
             double[] aVec = new double[n+1];
@@ -51,7 +64,7 @@ namespace ConsoleApp1
             
             double suma=0;
             int j = 1;
-            int l = 10;
+            int l = 990;
             double[] temperatury = new double[n+1];
 
 
@@ -67,22 +80,28 @@ namespace ConsoleApp1
             funkcje.Entalpia entZtemp = new funkcje.Entalpia();
             double ent;
 
+            funkcje.Kappa kap = new funkcje.Kappa();
+            double kappa;
             
 
 
             for (int i = 0; i <= n; i++)
                 tabTx[i] = lbIteracji; /* ustawiamy czas topnienia dla punktu x na lbIteracji */
 
-            
+            kappa = kap.kappa(lambdaL, lambdaS, aL, 1);
+            entalpiaS = cS * roS * tempKrzep;
+            entalpiaL = entalpiaS + kappa;
 
             for (int i = 0; i < temp0.Length; i++)
             {
+                
+
                 if (temp0[i] > tempKrzep)
                 {
-                    tabH[0, i] = entZtemp.entalpia(temp0[i], tempKrzep, cL, roL, cS, roS, L); /* Etap 1: wyznaczamy entalpie w chwili 0 na podstawie T0*/
+                    tabH[0, i] = entZtemp.entalpia(temp0[i], tempKrzep, cL, roL, cS, roS, kappa); /* Etap 1: wyznaczamy entalpie w chwili 0 na podstawie T0*/
                 }
                 else
-                    tabH[0, i] = entZtemp.entalpia(temp0[i], tempKrzep, cL, roL, cS, roS, L);
+                    tabH[0, i] = entZtemp.entalpia(temp0[i], tempKrzep, cL, roL, cS, roS, kappa);
             }
 
             //Console.Write("tabH0[n-1]: {0}", tabH[0, 0]);
@@ -100,9 +119,12 @@ namespace ConsoleApp1
             while (granica < l&&j<=lbIteracji)
             {
                 a = lambdaL / (cL*roL); /* Etap 2a: sprowadzamy całość do fazy ciekłej */
-                //a = 1;
                 stalaA = a / (Math.Pow(deltaX, 2));
-                
+
+                kappa = kap.kappa(lambdaL, lambdaS, aL, deltaT*j);
+                entalpiaS = cS * roS * tempKrzep;
+                entalpiaL = entalpiaS + kappa;
+
 
                 for (int i = 0; i < temp0.Length; i++)
                     tabHKreska[j-1, i] = Math.Max(tabH[j-1, i], entalpiaL);
@@ -117,32 +139,35 @@ namespace ConsoleApp1
                 aVec[0] = 0;
                 for (int i = 1; i < n; i++)
                     aVec[i] = -stalaA;
-                aVec[n] = -2*stalaA;
+                aVec[n] = 0;
 
-                bVec[0] = 1;
-                for (int i = 1; i < n+1; i++)
-                    bVec[i] = stalaSigma+2*stalaA;
 
-                cVec[0] = 0;
-                for (int i = 1; i < n ; i++)
+                for (int i = 0; i < n; i++)
+                    bVec[i] = stalaSigma + 2 * stalaA;
+                bVec[n] = 1;
+
+                cVec[0] = -2 * stalaA;
+                for (int i = 1; i < n; i++)
                     cVec[i] = -stalaA;
                 cVec[n] = 0;
 
-                //u0 = Math.Exp(a*(j)*deltaT);
-                dVec[0] = entZtemp.entalpia(u0, tempKrzep, cL, roL, cS, roS, L); /* obliczenie entalpii dla brzegowej temperatury u0 */
-                Console.WriteLine(dVec[0]>entalpiaL);
 
-                for (int i = 1; i <=n; i++)
+                for (int i = 0; i < n; i++)
                 {
                     suma = 0;
-                    
                     for (int it = 2; it <= j; it++)
                     {
-                        suma = suma + (Math.Pow(it, 1 - alfa) - Math.Pow(it - 1, 1 - alfa)) * (tabHKreska[j-it+1, i]-tabHKreska[j-it,i]);
+                        suma = suma + (Math.Pow(it, 1 - alfa) - Math.Pow(it - 1, 1 - alfa)) * (tabH2Kreska[j - it + 1, i] - tabH2Kreska[j - it, i]);
                     }
 
-                    dVec[i] = stalaSigma * tabHKreska[j-1, i] - stalaSigma * suma+ cL*roL*funkcjaG.g(i, tabTx[i], tabHKreska, j, stalaSigma, alfa, cL, cS, roL, roS, tempKrzep, entalpiaL, entalpiaS, L);
+                    dVec[i] = stalaSigma * tabH2Kreska[j - 1, i] - stalaSigma * suma + cL * roL * funkcjaG.g(i, tabTx[i], tabH2Kreska, j, stalaSigma, alfa, cL, cS, roL, roS, tempKrzep, entalpiaL, entalpiaS, kappa); ;
                 }
+                //uI = Math.Exp(a*(j)*deltaT-2);
+                //uI =Math.Exp(a*(j)*deltaT-1);
+                u0 = 145 / 8 + (j * deltaT) / 2;
+                dVec[n] = entZtemp.entalpia(u0, tempKrzep, cL, roL, cS, roS, kappa);
+
+                
                 
 
                 wynikThomas= thomas.nowa(aVec, bVec, cVec, dVec); /* rozwiązanie układu równań metodą Thomasa */
@@ -170,7 +195,6 @@ namespace ConsoleApp1
 
 
                 a = lambdaS / (cS * roS); /* Etap 2b: sprowadzamy całość do fazy stałej  */
-                //a = 1;
                 stalaA = a / (Math.Pow(deltaX, 2));
 
 
@@ -187,33 +211,36 @@ namespace ConsoleApp1
                 //    Console.Write("{0} ", tabH2Kreska[j-1, i]);
 
                 aVec[0] = 0;
-                for (int i = 1; i < n ; i++)
+                for (int i = 1; i < n; i++)
                     aVec[i] = -stalaA;
-                aVec[n] = 0;
+                aVec[n] = -2 * stalaA;
 
-                
-                for (int i = 0; i < n; i++)
+                bVec[0] = 1;
+                for (int i = 1; i < n + 1; i++)
                     bVec[i] = stalaSigma + 2 * stalaA;
-                bVec[n] = 1;
 
-                cVec[0] = -2*stalaA;
+                cVec[0] = 0;
                 for (int i = 1; i < n; i++)
                     cVec[i] = -stalaA;
                 cVec[n] = 0;
 
+                //u0 = Math.Exp(a*(j)*deltaT);
+                //u0 = Math.Exp(a*(j)*deltaT);
+                uI = 89 / 4 + j * deltaT;
+                dVec[0] = entZtemp.entalpia(uI, tempKrzep, cL, roL, cS, roS, kappa); /* obliczenie entalpii dla brzegowej temperatury u0 */
+                Console.WriteLine(dVec[0] > entalpiaL);
 
-                for (int i = 0; i <n; i++)
+                for (int i = 1; i <= n; i++)
                 {
                     suma = 0;
+
                     for (int it = 2; it <= j; it++)
                     {
-                        suma = suma + (Math.Pow(it, 1 - alfa) - Math.Pow(it - 1, 1 - alfa)) * (tabH2Kreska[j - it + 1, i] - tabH2Kreska[j - it, i]);
+                        suma = suma + (Math.Pow(it, 1 - alfa) - Math.Pow(it - 1, 1 - alfa)) * (tabHKreska[j - it + 1, i] - tabHKreska[j - it, i]);
                     }
-                    
-                    dVec[i] = stalaSigma * tabH2Kreska[j-1, i] - stalaSigma * suma + cL * roL * funkcjaG.g(i, tabTx[i], tabH2Kreska, j, stalaSigma, alfa, cL, cS, roL, roS, tempKrzep, entalpiaL, entalpiaS, L); ;
+
+                    dVec[i] = stalaSigma * tabHKreska[j - 1, i] - stalaSigma * suma + cL * roL * funkcjaG.g(i, tabTx[i], tabHKreska, j, stalaSigma, alfa, cL, cS, roL, roS, tempKrzep, entalpiaL, entalpiaS, kappa);
                 }
-                //uI = Math.Exp(a*(j)*deltaT-2);
-                dVec[n] = entZtemp.entalpia(uI, tempKrzep, cL, roL, cS, roS, L);
                 Console.WriteLine(uI);
 
                 wynikThomas = thomas.nowa(aVec, bVec, cVec, dVec); /* rozwiązanie układu równań metodą Thomasa */
@@ -278,7 +305,7 @@ namespace ConsoleApp1
                 Console.Write("{0} ", tabH[j-1, i]);
             }
 
-            string path = @"C:\Users\agata.chmielowska\Desktop\AlgorytmC-\entalpie.csv";
+            string path = @"C:\Users\agata.chmielowska\Desktop\AlgorytmC- — kopia — kopia\entalpie.csv";
             System.IO.StreamWriter str = new System.IO.StreamWriter(path, false);
 
             for (int i = 0; i <=n; i++)
@@ -291,11 +318,11 @@ namespace ConsoleApp1
             Console.Write("temp tabH: ");
             for (int i = 0; i <=n; i++)
             {
-                temperatury[i] = tempZEntalpii.temperatura(tabH[j - 1, i], tempKrzep, cL, roL, cS, roS, L, entalpiaL, entalpiaS);
+                temperatury[i] = tempZEntalpii.temperatura(tabH[j - 1, i], tempKrzep, cL, roL, cS, roS, kappa, entalpiaL, entalpiaS);
                 Console.Write("{0} ", temperatury[i]);
             }
 
-            path = @"C:\Users\agata.chmielowska\Desktop\AlgorytmC-\temperatury.csv";
+            path = @"C:\Users\agata.chmielowska\Desktop\AlgorytmC- — kopia — kopia\temperatury.csv";
             str = new System.IO.StreamWriter(path, false);
 
             for (int i = 0; i <=n; i++)
@@ -312,7 +339,7 @@ namespace ConsoleApp1
                 Console.Write("{0} ", tabTx[i]);
             }
 
-            path = @"C:\Users\agata.chmielowska\Desktop\AlgorytmC-\granica.csv";
+            path = @"C:\Users\agata.chmielowska\Desktop\AlgorytmC- — kopia — kopia\granica.csv";
             str = new System.IO.StreamWriter(path, false);
 
             for (int i = 0; i <=n; i++)
@@ -327,10 +354,10 @@ namespace ConsoleApp1
             Console.WriteLine("");
             Console.WriteLine("Granica znajduje sie w punkcie: {0}", granica);
 
-            temp = tempZEntalpii.temperatura(entalpiaL, tempKrzep, cL, roL, cS, roS, L, entalpiaL, entalpiaS);
+            temp = tempZEntalpii.temperatura(entalpiaL, tempKrzep, cL, roL, cS, roS, kappa, entalpiaL, entalpiaS);
             Console.WriteLine("Wartosc temperatury: {0}",temp);
 
-            wynikG = funkcjaG.g(5, tabTx[5], tabH, 20, stalaSigma, alfa, cL, cS, roL, roS, tempKrzep, entalpiaL, entalpiaS, L);
+            wynikG = funkcjaG.g(5, tabTx[5], tabH, 20, stalaSigma, alfa, cL, cS, roL, roS, tempKrzep, entalpiaL, entalpiaS, kappa);
             Console.WriteLine("Wartość g: {0} ",wynikG);
 
             Console.WriteLine("Wartość funkcji gamma: {0} ", SpecialFunction.gamma(0.5));
