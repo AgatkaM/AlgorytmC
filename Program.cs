@@ -88,7 +88,7 @@ namespace ConsoleApp1
             for (int i = 0; i <= n; i++)
                 tabTx[i] = lbIteracji; /* ustawiamy czas topnienia dla punktu x na lbIteracji */
 
-            kappa = kap.kappa(lambdaL, lambdaS, aL, 1);
+            kappa = kap.kappa(lambdaL, lambdaS, aL, 0.1);
             entalpiaS = cS * roS * tempKrzep;
             entalpiaL = entalpiaS + kappa;
 
@@ -362,7 +362,13 @@ namespace ConsoleApp1
 
             Console.WriteLine("Wartość funkcji gamma: {0} ", SpecialFunction.gamma(0.5));
 
-
+            Console.Write("temp tabH0: ");
+            for (int i = 0; i <= n; i++)
+            {
+                Console.WriteLine(temp0[i]);
+                temperatury[i] = tempZEntalpii.temperatura(tabH[0, i], tempKrzep, cL, roL, cS, roS, kappa, entalpiaL, entalpiaS);
+                Console.Write("{0} ", temperatury[i]);
+            }
 
 
 
