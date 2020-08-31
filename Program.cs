@@ -41,13 +41,13 @@ namespace ConsoleApp1
                 //temp0[i] = uI;
                 //temp0[i] =Math.Exp(-deltaX*i); /*warunek początkowy T0 */
                 //temp0[i] =Math.Exp(-deltaX*i);
-                if(0.5+i*deltaX<1)
+                if(0.5+i*deltaX<2)
                 {
-                    temp0[i] = 25 - 6 * (0.5 + i * deltaX) + Math.Pow(0.5 + i * deltaX, 2);
+                    temp0[i] = 20 -4* (0.5 + i * deltaX) + Math.Pow(0.5 + i * deltaX, 3);
                 }
                 else
                 {
-                    temp0[i] = 35 -23*(0.5+i*deltaX)+ 9*Math.Pow(0.5 + i * deltaX, 2)- Math.Pow(0.5 + i * deltaX, 3);
+                    temp0[i] = 16+Math.Pow(0.5 + i * deltaX, 2);
                 }
             }
             
@@ -64,7 +64,7 @@ namespace ConsoleApp1
             
             double suma=0;
             int j = 1;
-            int l = 990;
+            int l = 900;
             double[] temperatury = new double[n+1];
 
 
